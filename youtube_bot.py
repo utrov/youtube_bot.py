@@ -6,7 +6,6 @@ import requests
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Solo dejamos el canal que sí tiene el ID correcto
 CANALES = {
     "@labolsaconfern": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf932WZebrzMZnn1DR9YQLg"
 }
@@ -73,6 +72,17 @@ def main():
 
         print(f"¡Nuevo contenido detectado en {nombre_canal}: {titulo}!")
 
-        mensaje = (
-            f"📥 Canal: `{nombre_canal}`\n\n"
-            f"*
+        mensaje = "📥 Canal: `" + str(nombre_canal) + "`\n\n*NUEVO CONTENIDO / DIRECTO*\n\n• *" + str(titulo) + "* 💰\n  • **Enlace:** [Ver en YouTube](" + str(link) + ")"
+
+        enviar_telegram(mensaje)
+        nuevos_procesados.append(video_id)
+        hubo_novedades = True
+
+    if hubo_novedades:
+        guardar_procesados(nuevos_procesados)
+        print("Caché de vídeos actualizada correctamente.")
+    else:
+        print("Todo al día. Ningún contenido nuevo en esta ejecución.")
+
+if __name__ == "__main__":
+    main()
