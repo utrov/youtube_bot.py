@@ -3,23 +3,16 @@ import json
 import feedparser
 import requests
 
-# ==========================================
-# 1. CONFIGURACIÓN Y CONSTANTES
-# ==========================================
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-# Feeds RSS de los canales de YouTube (capturan vídeos y directos)
+# Solo dejamos el canal que sí tiene el ID correcto
 CANALES = {
-    "@labolsaconfern": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf932WZebrzMZnn1DR9YQLg",
-    "@academiadeinversoresusa": "https://www.youtube.com/feeds/videos.xml?channel_id=ID_CANAL_ACADEMIA"
+    "@labolsaconfern": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf932WZebrzMZnn1DR9YQLg"
 }
 
 CACHE_FILE = "videos_procesados.json"
 
-# ==========================================
-# 2. GESTIÓN DE CACHÉ (EVITAR DUPLICADOS)
-# ==========================================
 def cargar_procesados():
     if os.path.exists(CACHE_FILE):
         try:
@@ -33,9 +26,6 @@ def guardar_procesados(procesados):
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         json.dump(procesados, f, ensure_ascii=False, indent=4)
 
-# ==========================================
-# 3. ENVÍO DE MENSAJES A TELEGRAM
-# ==========================================
 def enviar_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -51,9 +41,6 @@ def enviar_telegram(mensaje):
     except Exception as e:
         print(f"Excepción al conectar con Telegram: {e}")
 
-# ==========================================
-# 4. PROCESO DE MONITOREO DE CANALES
-# ==========================================
 def main():
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("Faltan las credenciales de Telegram en las variables de entorno.")
@@ -88,20 +75,4 @@ def main():
 
         mensaje = (
             f"📥 Canal: `{nombre_canal}`\n\n"
-            f"*NUEVO CONTENIDO / DIRECTO*\n\n"
-            f"• *{titulo}* 💰\n"
-            f"  • **Enlace:** [Ver en YouTube]({link})"
-        )
-
-        enviar_telegram(mensaje)
-        nuevos_procesados.append(video_id)
-        hubo_novedades = True
-
-    if hubo_novedades:
-        guardar_procesados(nuevos_procesados)
-        print("Caché de vídeos actualizada correctamente.")
-    else:
-        print("Todo al día. Ningún contenido nuevo en esta ejecución.")
-
-if __name__ == "__main__":
-    main()
+            f"*
