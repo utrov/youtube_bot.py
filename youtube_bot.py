@@ -1,10 +1,43 @@
 import os
+import json
+import feedparser
 import requests
 
-# Configuración de Telegram (lee los secretos que ya tienes o configura nuevos)
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+# ==========================================
+# 1. CONFIGURACIÓN Y CONSTANTES
+# ==========================================
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
+# Feeds RSS oficiales de los canales de YouTube (capturan tanto vídeos como directos)
+# Usamos el ID del canal para asegurarnos de que la lectura sea 100% estable.
+CANALES = {
+    "@labolsaconfern": "https://www.youtube.com/feeds/videos.xml?channel_id=UCoLw1i74tZpWvJ7l6y0X04Q", # Se actualizará con el feed exacto
+    "@academiadeinversoresusa": "https://www.youtube.com/feeds/videos.xml?channel_id=UC... " # Se actualizará con el feed exacto
+}
+
+# Archivo local para recordar los vídeos ya enviados y evitar duplicados
+CACHE_FILE = "videos_procesados.json"
+
+# ==========================================
+# 2. GESTIÓN DE CACHÉ (EVITAR DUPLICADOS)
+# ==========================================
+def cargar_procesados():
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+def guardar_procesados(procesados):
+    with open(CACHE_FILE, "w", encoding="utf-8") as f:
+        json.dump(procesados, f, ensure_ascii=False, indent=4)
+
+# ==========================================
+# 3. ENVÍO DE MENSAJES A TELEGRAM
+# ==========================================
 def enviar_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -13,27 +46,70 @@ def enviar_telegram(mensaje):
         "parse_mode": "Markdown",
         "disable_web_page_preview": True
     }
-    response = requests.post(url, json=payload)
-    if response.status_code != 200:
-        print(f"Error al enviar mensaje: {response.text}")
+    try:
+        response = requests.post(url, json=payload)
+        if response.status_code != 200:
+            print(f"Error al enviar mensaje: {response.text}")
+    except Exception as e:
+        print(f"Excepción al conectar con Telegram: {e}")
 
+# ==========================================
+# 4. PROCESO DE MONITOREO DE CANALES
+# ==========================================
 def main():
-    # Aquí irá la lógica para comprobar los canales de YouTube:
-    # @labolsaconfern y @academiadeinversoresusa
-    
-    # Mensaje de prueba simulado para verificar que funciona
-    mensaje = (
-        "📥 Canal: `@labolsaconfern`\n\n"
-        "*ANÁLISIS DE MERCADO: Ejemplo de prueba*\n\n"
-        "* **`MSFT`** (Microsoft) 💰\n"
-        "  * **Precio actual:** `$415.50`\n"
-        "  * **Intención:** 🟢 Interés de Compra / Acumulación\n"
-        "  * **Explicación:** Prueba del sistema automatizado.\n"
-        "  * **Precio / Referencia:** Soporte clave en torno a los $400.\n"
-        "  * **Minuto:** [`04:15`](https://youtu.be/dQw4w9WgXcQ?t=255)"
-    )
-    
-    enviar_telegram(mensaje)
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Faltan las credenciales de Telegram en las variables de entorno.")
+        return
+
+    procesados = cargar_procesados()
+    nuevos_procesados = list(procesados)
+    hubo_novedades = False
+
+    for nombre_canal, feed_url in CANALES.items():
+        print(f"Revisando feed de {nombre_canal}...")
+        try:
+            feed = feedparser.parse(feed_url)
+        except Exception as e:
+            print(f"No se pudo leer el feed de {nombre_canal}: {e}")
+            continue
+
+        if not feed.entries:
+            print(f"No hay entradas recientes en {nombre_canal}.")
+            continue
+
+        # Analizamos el vídeo más reciente publicado en el canal (sea directo o vídeo normal)
+        ultimo_video = feed.entries[0]
+        video_id = ultimo_video.get("yt_videoid", ultimo_video.get("id"))
+        titulo = ultimo_video.get("title", "Sin título")
+        link = ultimo_video.get("link", "#")
+
+        # Si ya lo habíamos procesado en ejecuciones anteriores, lo saltamos
+        if video_id in procesados:
+            print(f"-> El último contenido de {nombre_canal} ya fue notificado.")
+            continue
+
+        print(f"¡Nuevo contenido detectado en {nombre_canal}: {titulo}!")
+
+        # Construimos el mensaje estructurado para tu Telegram
+        mensaje = (
+            f"📥 Canal: `{nombre_canal}`\n\n"
+            f"*NUEVO CONTENIDO / DIRECTO*\n\n"
+            f"* *{titulo}* 💰\n"
+            f"  * **Enlace:** [Ver en YouTube]({link})"
+        )
+
+        enviar_telegram(mensaje)
+
+        # Añadimos el ID a la lista de procesados para que no se repita nunca más
+        nuevos_procesados.append(video_id)
+        hubo_novedades = True
+
+    # Si se detectaron vídeos nuevos, guardamos la caché actualizada
+    if hubo_novedades:
+        guardar_procesados(nuevos_procesados)
+        print("Caché de vídeos actualizada correctamente.")
+    else:
+        print("Todo al día. Ningún contenido nuevo en esta ejecución.")
 
 if __name__ == "__main__":
     main()
