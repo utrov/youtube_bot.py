@@ -33,13 +33,13 @@ def enviar_telegram(mensaje):
         "chat_id": TELEGRAM_CHAT_ID,
         "text": mensaje,
         "parse_mode": "Markdown",
-        "disable_web_page_preview": True
+        "disable_web_page_preview": False
     }
     try:
         response = requests.post(url, json=payload)
-        print(f"Respuesta de Telegram: Código {response.status_code} - {response.text}")
+        print(f"Respuesta de Telegram: Código {response.status_code}")
         if response.status_code != 200:
-            sys.exit(f"¡Error crítico de Telegram! El servidor respondió: {response.text}")
+            sys.exit(f"Error de Telegram: {response.text}")
     except Exception as e:
         sys.exit(f"Excepción al conectar con Telegram: {e}")
 
@@ -67,16 +67,27 @@ def main():
         video_id = ultimo_video.get("yt_videoid", ultimo_video.get("id"))
         titulo = ultimo_video.get("title", "Sin título")
         link = ultimo_video.get("link", "#")
+        
+        # Extraemos la descripción para incluir el resumen
+        descripcion = ultimo_video.get("summary", "Sin resumen disponible.")
+        # Limpiamos la descripción si es muy larga para Telegram
+        if len(descripcion) > 300:
+            descripcion = descripcion[:300] + "..."
 
         if video_id in procesados:
             print(f"-> El último contenido de {nombre_canal} ya fue notificado.")
-            # Para forzar la prueba y que envíe aunque esté en caché, 
-            # puedes comentar la línea de abajo temporalmente:
             continue
 
         print(f"¡Nuevo contenido detectado en {nombre_canal}: {titulo}!")
 
-        mensaje = "📥 Canal: `" + str(nombre_canal) + "`\n\n*NUEVO CONTENIDO / DIRECTO*\n\n• *" + str(titulo) + "* 💰\n  • **Enlace:** [Ver en YouTube](" + str(link) + ")"
+        # Formato con Resumen
+        mensaje = (
+            "📥 *NUEVA NOTICIA / VÍDEO*\n"
+            "📌 *Canal:* `" + str(nombre_canal) + "`\n\n"
+            "🎬 *Título:* " + str(titulo) + "\n\n"
+            "📝 *Resumen / Contenido:*\n" + str(descripcion) + "\n\n"
+            "🔗 [Ver vídeo completo en YouTube](" + str(link) + ")"
+        )
 
         enviar_telegram(mensaje)
         nuevos_procesados.append(video_id)
