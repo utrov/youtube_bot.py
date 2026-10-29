@@ -6,7 +6,7 @@ import requests
 # ==========================================
 # 1. CONFIGURACIÓN Y CONSTANTES
 # ==========================================
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 # Feeds RSS de los canales de YouTube (capturan vídeos y directos)
