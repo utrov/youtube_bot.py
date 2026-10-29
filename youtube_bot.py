@@ -2,6 +2,7 @@ import os
 import json
 import feedparser
 import requests
+import sys
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
@@ -35,15 +36,15 @@ def enviar_telegram(mensaje):
     }
     try:
         response = requests.post(url, json=payload)
+        print(f"Respuesta de Telegram: Código {response.status_code} - {response.text}")
         if response.status_code != 200:
-            print(f"Error al enviar mensaje: {response.text}")
+            sys.exit(f"¡Error crítico de Telegram! El servidor respondió: {response.text}")
     except Exception as e:
-        print(f"Excepción al conectar con Telegram: {e}")
+        sys.exit(f"Excepción al conectar con Telegram: {e}")
 
 def main():
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print("Faltan las credenciales de Telegram en las variables de entorno.")
-        return
+        sys.exit("Faltan las credenciales de Telegram en las variables de entorno.")
 
     procesados = cargar_procesados()
     nuevos_procesados = list(procesados)
@@ -68,6 +69,8 @@ def main():
 
         if video_id in procesados:
             print(f"-> El último contenido de {nombre_canal} ya fue notificado.")
+            # Para forzar la prueba y que envíe aunque esté en caché, 
+            # puedes comentar la línea de abajo temporalmente:
             continue
 
         print(f"¡Nuevo contenido detectado en {nombre_canal}: {titulo}!")
