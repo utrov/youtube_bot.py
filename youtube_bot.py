@@ -8,7 +8,8 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 CANALES = {
-    "@labolsaconfern": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf932WZebrzMZnn1DR9YQLg"
+    "@labolsaconfern": "https://www.youtube.com/feeds/videos.xml?channel_id=UCf932WZebrzMZnn1DR9YQLg",
+    "@academiadeinversoresusa": "https://www.youtube.com/feeds/videos.xml?channel_id=UC5MrBwWA29UVKJUiv0S6I6A"
 }
 
 CACHE_FILE = "videos_procesados.json"
